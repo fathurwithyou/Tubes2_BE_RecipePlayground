@@ -9,17 +9,8 @@ import (
 	"path/filepath"
 
 	"github.com/PuerkitoBio/goquery"
+	"Tubes2_BE_RecipePlayground/internal/model"
 )
-
-type Element struct {
-	Name    string     `json:"name"`
-	Recipes [][]string `json:"recipes"`
-	Tier    int        `json:"tier"`
-}
-
-type Result struct {
-	Elements []Element `json:"elements"`
-}
 
 func Scrape(filename string) error {
 	const url = "https://little-alchemy.fandom.com/wiki/Elements_(Little_Alchemy_2)"
@@ -43,10 +34,9 @@ func Scrape(filename string) error {
 		return fmt.Errorf("unexpected table count: %d", tables.Length())
 	}
 
-	var elements []Element
+	var elements []model.Element
 	tier := 0
 	tables.Each(func(i int, tbl *goquery.Selection) {
-		// skip the second table (i == 1)
 		if i == 1 {
 			return
 		}
@@ -87,7 +77,7 @@ func Scrape(filename string) error {
 				}
 			})
 
-			elements = append(elements, Element{
+			elements = append(elements, model.Element{
 				Name:    name,
 				Recipes: recipes,
 				Tier:    tier,
@@ -97,7 +87,7 @@ func Scrape(filename string) error {
 		tier++
 	})
 
-	out := Result{Elements: elements}
+	out := model.Data{Elements: elements}
 	filePath := filepath.Join("..", "data", filename)
 	f, err := os.Create(filePath)
 	if err != nil {
