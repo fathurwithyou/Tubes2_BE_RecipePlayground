@@ -1,4 +1,4 @@
-package recipetree
+package solver
 
 import (
 	"runtime"

@@ -1,4 +1,4 @@
-module Tubes2_BE_RecipePlayground
+module github.com/fathurwithyou/Tubes2_BE_RecipePlayground
 
 go 1.23.4
 

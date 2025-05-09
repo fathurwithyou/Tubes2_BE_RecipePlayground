@@ -1,4 +1,6 @@
 {
+  "version": 2,
+
   "headers": [
     {
       "source": "/(.*)",
@@ -16,10 +18,10 @@
       ]
     }
   ],
-    "rewrites": [
-        {
-            "source": "/api/(.*)",
-            "destination": "/api/main.go"   
-        }
-    ]
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/main.go"
+    }
+  ]
 }

@@ -1,7 +1,7 @@
-package recipetree
+package solver
 
 import (
-	"Tubes2_BE_RecipePlayground/internal/model"
+	"github.com/fathurwithyou/Tubes2_BE_RecipePlayground/internal/model"
 )
 
 var elementsMapGlobal map[string]model.Element

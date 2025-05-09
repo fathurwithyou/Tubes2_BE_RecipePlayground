@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"Tubes2_BE_RecipePlayground/internal/model"
-	"Tubes2_BE_RecipePlayground/internal/scraper"
-	recipetree "Tubes2_BE_RecipePlayground/internal/solver"
+	"github.com/fathurwithyou/Tubes2_BE_RecipePlayground/internal/model"
+	"github.com/fathurwithyou/Tubes2_BE_RecipePlayground/internal/scraper"
+	"github.com/fathurwithyou/Tubes2_BE_RecipePlayground/internal/solver"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,7 +24,7 @@ func Main() {
 	if err != nil {
 		log.Fatalf("Failed to load element data: %v", err)
 	}
-	recipetree.InitElementsMap(appData)
+	solver.InitElementsMap(appData)
 
 	app = gin.New()
 
@@ -58,9 +58,9 @@ func Main() {
 
 		switch method {
 		case "bfs":
-			resultData = recipetree.Bfs(target, maxRecipes)
+			resultData = solver.Bfs(target, maxRecipes)
 		case "dfs":
-			resultData = recipetree.Dfs(target, maxRecipes)
+			resultData = solver.Dfs(target, maxRecipes)
 		default:
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid method"})
 			return
@@ -75,7 +75,7 @@ func Main() {
 	})
 
 	app.GET("/elements", func(c *gin.Context) {
-		elements := recipetree.GetAllElements()
+		elements := solver.GetAllElements()
 		c.JSON(http.StatusOK, gin.H{"elements": elements})
 	})
 

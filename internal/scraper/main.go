@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/PuerkitoBio/goquery"
-	"Tubes2_BE_RecipePlayground/internal/model"
+	"github.com/fathurwithyou/Tubes2_BE_RecipePlayground/internal/model"
 )
 
 func Scrape(filename string) error {
