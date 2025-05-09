@@ -12,7 +12,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func main() {
+var (
+	app *gin.Engine
+)
+
+func Main() {
 	if err := scraper.Scrape("alchemy_elements.json"); err != nil {
 		log.Fatalf("Failed to scrape elements: %v", err)
 	}
@@ -22,9 +26,9 @@ func main() {
 	}
 	recipetree.InitElementsMap(appData)
 
-	router := gin.Default()
+	app = gin.New()
 
-	router.Use(func(c *gin.Context) {
+	app.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
@@ -36,11 +40,11 @@ func main() {
 		c.Next()
 	})
 
-	router.GET("/ping", func(c *gin.Context) {
+	app.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "pong"})
 	})
 
-	router.GET("/solve/:method/:target/:maxRecipe", func(c *gin.Context) {
+	app.GET("/solve/:method/:target/:maxRecipe", func(c *gin.Context) {
 		method := c.Param("method")
 		target := c.Param("target")
 		maxRecipeStr := c.Param("maxRecipe")
@@ -70,13 +74,17 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"result": resultData})
 	})
 
-	router.GET("/elements", func(c *gin.Context) {
+	app.GET("/elements", func(c *gin.Context) {
 		elements := recipetree.GetAllElements()
 		c.JSON(http.StatusOK, gin.H{"elements": elements})
 	})
 
 	log.Println("Server running on port :8080")
-	if err := router.Run(":8080"); err != nil {
+	if err := app.Run(":8080"); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
 	}
+}
+
+func Handler(w http.ResponseWriter, r *http.Request) {
+	app.ServeHTTP(w, r)
 }
