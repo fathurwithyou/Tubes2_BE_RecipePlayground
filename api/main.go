@@ -84,7 +84,3 @@ func main() {
 		log.Fatalf("Failed to run server: %v", err)
 	}
 }
-
-func Handler(w http.ResponseWriter, r *http.Request) {
-	app.ServeHTTP(w, r)
-}
