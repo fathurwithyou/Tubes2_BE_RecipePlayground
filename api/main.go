@@ -1,13 +1,13 @@
-package api
+package main
 
 import (
 	"log"
 	"net/http"
 	"strconv"
 
-	"github.com/fathurwithyou/Tubes2_BE_RecipePlayground/internal/model"
-	"github.com/fathurwithyou/Tubes2_BE_RecipePlayground/internal/scraper"
-	"github.com/fathurwithyou/Tubes2_BE_RecipePlayground/internal/solver"
+	"github.com/fathurwithyou/Tubes2_BE_RecipePlayground/service/model"
+	"github.com/fathurwithyou/Tubes2_BE_RecipePlayground/service/scraper"
+	"github.com/fathurwithyou/Tubes2_BE_RecipePlayground/service/solver"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,7 +16,7 @@ var (
 	app *gin.Engine
 )
 
-func Main() {
+func main() {
 	if err := scraper.Scrape("alchemy_elements.json"); err != nil {
 		log.Fatalf("Failed to scrape elements: %v", err)
 	}
