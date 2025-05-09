@@ -3,6 +3,7 @@ package recipetree
 import (
 	"runtime"
 	"sync"
+	"sync/atomic"
 )
 
 var (
@@ -21,7 +22,7 @@ type bfsEvent struct {
 	child2 *node
 }
 
-func Bfs(rootElementName string, maxDepth int) interface{} {
+func Bfs(rootElementName string, maxRecipes int64) interface{} {
 	if elementsMapGlobal == nil {
 		return map[string]string{"error": "Element data not initialized"}
 	}
@@ -35,15 +36,13 @@ func Bfs(rootElementName string, maxDepth int) interface{} {
 	root := &node{Name: rootElementName}
 	currentLevel := []*node{root}
 	workers := runtime.NumCPU()
+	var totalCount int64
 
-	for depth := 0; depth < maxDepth; depth++ {
-		if len(currentLevel) == 0 {
-			break
-		}
+	for len(currentLevel) > 0 && atomic.LoadInt64(&totalCount) < maxRecipes {
 
 		eventsPerWorker := make([][]bfsEvent, workers)
 		for i := range eventsPerWorker {
-			eventsPerWorker[i] = []bfsEvent{}
+			eventsPerWorker[i] = nil
 		}
 
 		var wg sync.WaitGroup
@@ -64,17 +63,19 @@ func Bfs(rootElementName string, maxDepth int) interface{} {
 			}
 			chunk := currentLevel[start:end]
 
-			go func(id int, nodes []*node) {
+			go func(id int, parents []*node) {
 				defer wg.Done()
-				localEvents := eventsPerWorker[id]
-				for _, parent := range nodes {
+				local := eventsPerWorker[id]
+				for _, parent := range parents {
+					if atomic.LoadInt64(&totalCount) >= maxRecipes {
+						break
+					}
 
 					combosMu.RLock()
 					combos, ok := combosCache[parent.Name]
 					combosMu.RUnlock()
 
 					if !ok {
-
 						eData := elementsMapGlobal[parent.Name]
 						var filtered [][]string
 						for _, rec := range eData.Recipes {
@@ -88,20 +89,30 @@ func Bfs(rootElementName string, maxDepth int) interface{} {
 						combos = filtered
 					}
 
+					parentTier := elementsMapGlobal[parent.Name].Tier
 					for _, rec := range combos {
-						c1 := &node{Name: rec[0]}
-						c2 := &node{Name: rec[1]}
-						localEvents = append(localEvents, bfsEvent{parent: parent, child1: c1, child2: c2})
+						if atomic.LoadInt64(&totalCount) >= maxRecipes {
+							break
+						}
+						c1, c2 := rec[0], rec[1]
+
+						if elementsMapGlobal[c1].Tier >= parentTier || elementsMapGlobal[c2].Tier >= parentTier {
+							continue
+						}
+
+						atomic.AddInt64(&totalCount, 1)
+						child1 := &node{Name: c1}
+						child2 := &node{Name: c2}
+						local = append(local, bfsEvent{parent: parent, child1: child1, child2: child2})
 					}
+					eventsPerWorker[id] = local
 				}
-				eventsPerWorker[id] = localEvents
 			}(w, chunk)
 		}
-
 		wg.Wait()
 
 		nextLevel := make([]*node, 0)
-		events := make([]bfsEvent, 0)
+		events := []bfsEvent{}
 		for _, buf := range eventsPerWorker {
 			events = append(events, buf...)
 		}
@@ -120,11 +131,11 @@ func convertNode(n *node) interface{} {
 	if len(n.Children) == 0 {
 		return n.Name
 	}
-	pairs := make([]interface{}, 0, len(n.Children))
-	for _, children := range n.Children {
+	pairs := make([]interface{}, len(n.Children))
+	for i, children := range n.Children {
 		p1 := convertNode(children[0])
 		p2 := convertNode(children[1])
-		pairs = append(pairs, []interface{}{p1, p2})
+		pairs[i] = []interface{}{p1, p2}
 	}
 	return map[string]interface{}{n.Name: pairs}
 }

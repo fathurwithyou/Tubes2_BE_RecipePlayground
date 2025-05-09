@@ -1,9 +1,8 @@
 package recipetree
 
 import (
-	"fmt"
-	"runtime"
 	"sync"
+	"sync/atomic"
 )
 
 var (
@@ -11,75 +10,77 @@ var (
 	cacheMu sync.RWMutex
 )
 
-func Dfs(rootElementName string, maxDepth int) interface{} {
+func Dfs(rootElementName string, maxRecipes int64) interface{} {
 	if elementsMapGlobal == nil {
 		return map[string]string{"error": "Element data not initialized"}
 	}
 	cacheMu.Lock()
 	cache = make(map[string]interface{})
 	cacheMu.Unlock()
-	return dfsChunked(rootElementName, 0, maxDepth)
+
+	var totalCount int64
+	return dfsChunked(rootElementName, &totalCount, maxRecipes)
 }
 
-func dfsChunked(elementName string, currentDepth, maxDepth int) interface{} {
-	key := fmt.Sprintf("%s|%d", elementName, currentDepth)
+func dfsChunked(elementName string, totalCount *int64, maxRecipes int64) interface{} {
 
 	cacheMu.RLock()
-	if val, ok := cache[key]; ok {
+	if val, ok := cache[elementName]; ok {
 		cacheMu.RUnlock()
 		return val
 	}
 	cacheMu.RUnlock()
 
-	eData, exists := elementsMapGlobal[elementName]
-	if !exists || len(eData.Recipes) == 0 || currentDepth >= maxDepth {
+	if atomic.LoadInt64(totalCount) >= maxRecipes {
 		cacheMu.Lock()
-		cache[key] = elementName
+		cache[elementName] = elementName
 		cacheMu.Unlock()
 		return elementName
 	}
 
-	var recipes = make([][]string, 0, len(eData.Recipes))
-	for _, rec := range eData.Recipes {
-		if len(rec) == 2 {
-			recCopy := make([]string, 2)
-			copy(recCopy, rec)
-			recipes = append(recipes, recCopy)
-		}
+	eData, exists := elementsMapGlobal[elementName]
+	if !exists || len(eData.Recipes) == 0 || eData.Tier == 0 {
+		cacheMu.Lock()
+		cache[elementName] = elementName
+		cacheMu.Unlock()
+		return elementName
 	}
 
-	workers := runtime.NumCPU()
-	n := len(recipes)
-	chunkSize := (n + workers - 1) / workers
-	results := make([][]interface{}, n)
+	currentTier := eData.Tier
 
-	var wg sync.WaitGroup
-	for w := 0; w < workers; w++ {
-		start := w * chunkSize
-		if start >= n {
+	recipes := make([][]string, 0, len(eData.Recipes))
+	for _, rec := range eData.Recipes {
+		if len(rec) != 2 {
+			continue
+		}
+		c1, c2 := rec[0], rec[1]
+		child1, ok1 := elementsMapGlobal[c1]
+		child2, ok2 := elementsMapGlobal[c2]
+
+		if !ok1 || !ok2 || child1.Tier >= currentTier || child2.Tier >= currentTier {
+			continue
+		}
+		recipes = append(recipes, []string{c1, c2})
+	}
+
+	var results [][]interface{}
+	for _, rec := range recipes {
+		if atomic.LoadInt64(totalCount) >= maxRecipes {
 			break
 		}
-		end := start + chunkSize
-		if end > n {
-			end = n
-		}
-		wg.Add(1)
+		atomic.AddInt64(totalCount, 1)
+		left := dfsChunked(rec[0], totalCount, maxRecipes)
+		right := dfsChunked(rec[1], totalCount, maxRecipes)
 
-		go func(s, e int) {
-			defer wg.Done()
-			for i := s; i < e; i++ {
-				r := recipes[i]
-				n1 := dfsChunked(r[0], currentDepth+1, maxDepth)
-				n2 := dfsChunked(r[1], currentDepth+1, maxDepth)
-				results[i] = []interface{}{n1, n2}
-			}
-		}(start, end)
+		if left == nil || right == nil {
+			continue
+		}
+		results = append(results, []interface{}{left, right})
 	}
-	wg.Wait()
 
 	res := map[string]interface{}{elementName: results}
 	cacheMu.Lock()
-	cache[key] = res
+	cache[elementName] = res
 	cacheMu.Unlock()
 	return res
 }
