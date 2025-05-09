@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "cd api && go run main.go",
   "headers": [
     {
       "source": "/(.*)",
