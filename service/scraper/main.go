@@ -1,4 +1,3 @@
-// internal/scraper/scraper.go
 package scraper
 
 import (
@@ -9,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/fathurwithyou/Tubes2_BE_RecipePlayground/internal/model"
+	"github.com/fathurwithyou/Tubes2_BE_RecipePlayground/service/model"
 )
 
 func Scrape(filename string) error {
