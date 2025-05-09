@@ -18,7 +18,7 @@ type Data struct {
 
 func LoadElementsFromFile(filename string) (Data, error) {
 	data := Data{}
-	filePath := filepath.Join("..", "data", filename)
+	filePath := filepath.Join(os.TempDir(), filename)
 	file, err := os.Open(filePath)
 	if err != nil {
 		return data, err

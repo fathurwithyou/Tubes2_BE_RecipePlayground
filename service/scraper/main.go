@@ -87,7 +87,7 @@ func Scrape(filename string) error {
 	})
 
 	out := model.Data{Elements: elements}
-	filePath := filepath.Join("..", "data", filename)
+	filePath := filepath.Join(os.TempDir(),filename)
 	f, err := os.Create(filePath)
 	if err != nil {
 		return fmt.Errorf("create file: %w", err)
