@@ -1,7 +1,19 @@
 {
+  "version": 2,
   "build": {
     "env": {
       "GO_BUILD_FLAGS": "-ldflags '-s -w'"
     }
-  }
+  },
+  "functions": {
+    "cmd/main.go": {
+      "runtime": "go1.x"
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",          
+      "dest": "/cmd/main.go"   
+    }
+  ]
 }

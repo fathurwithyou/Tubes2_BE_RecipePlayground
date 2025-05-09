@@ -7,13 +7,12 @@ import (
 
 	"Tubes2_BE_RecipePlayground/internal/model"
 	"Tubes2_BE_RecipePlayground/internal/scraper"
-	"Tubes2_BE_RecipePlayground/internal/solver"
+	recipetree "Tubes2_BE_RecipePlayground/internal/solver"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// Scrape and load element data
 	if err := scraper.Scrape("alchemy_elements.json"); err != nil {
 		log.Fatalf("Failed to scrape elements: %v", err)
 	}
