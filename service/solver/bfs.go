@@ -98,6 +98,11 @@ func Bfs(rootElementName string, maxRecipes int64) interface{} {
 							continue
 						}
 
+						child1 := &node{Name: c1Name}
+						child2 := &node{Name: c2Name}
+
+						localEvents = append(localEvents, bfsEvent{parent: parent, child1: child1, child2: child2})
+
 						if child1Data.Tier == 0 && child2Data.Tier == 0 {
 							atomic.AddInt64(&totalCount, 1)
 						}
@@ -105,10 +110,6 @@ func Bfs(rootElementName string, maxRecipes int64) interface{} {
 						if atomic.LoadInt64(&totalCount) >= maxRecipes {
 							break
 						}
-
-						child1 := &node{Name: c1Name}
-						child2 := &node{Name: c2Name}
-						localEvents = append(localEvents, bfsEvent{parent: parent, child1: child1, child2: child2})
 					}
 					eventsPerWorker[id] = localEvents
 				}
