@@ -44,6 +44,7 @@ func init() {
 		c.JSON(http.StatusOK, gin.H{"message": "pong"})
 	})
 
+	
 	router.GET("/solve/:method/:target/:maxRecipe", func(c *gin.Context) {
 		method := c.Param("method")
 		target := c.Param("target")
@@ -68,7 +69,13 @@ func init() {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Element not found"})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"result": resultData})
+
+		visitedNodeCount := solver.GetVisitedNodeCount()
+
+		c.JSON(http.StatusOK, gin.H{
+			"result":              resultData,
+			"visited_node_count":  visitedNodeCount,
+		})
 	})
 
 	router.GET("/elements", func(c *gin.Context) {

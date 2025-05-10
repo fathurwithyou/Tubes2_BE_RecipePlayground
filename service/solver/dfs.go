@@ -19,6 +19,7 @@ func Dfs(rootElementName string, maxRecipes int64) interface{} {
 	cacheMu.Unlock()
 
 	var totalCount int64
+	visitedNodeCount = 0
 	return dfsChunked(rootElementName, &totalCount, maxRecipes)
 }
 
@@ -26,6 +27,8 @@ func dfsChunked(elementName string, totalCount *int64, maxRecipes int64) interfa
 
 	cacheMu.RLock()
 	if val, ok := cache[elementName]; ok {
+
+		atomic.AddInt64(&visitedNodeCount, 1)
 		cacheMu.RUnlock()
 		return val
 	}
@@ -35,6 +38,7 @@ func dfsChunked(elementName string, totalCount *int64, maxRecipes int64) interfa
 		cacheMu.Lock()
 		cache[elementName] = elementName
 		cacheMu.Unlock()
+		atomic.AddInt64(&visitedNodeCount, 1)
 		return elementName
 	}
 
@@ -43,12 +47,15 @@ func dfsChunked(elementName string, totalCount *int64, maxRecipes int64) interfa
 		cacheMu.Lock()
 		cache[elementName] = elementName
 		cacheMu.Unlock()
+		atomic.AddInt64(&visitedNodeCount, 1)
 		return elementName
 	}
 
-	currentTier := eData.Tier
+	atomic.AddInt64(&visitedNodeCount, 1)
 
+	currentTier := eData.Tier
 	recipes := make([][]string, 0, len(eData.Recipes))
+
 	for _, rec := range eData.Recipes {
 		if len(rec) != 2 {
 			continue
@@ -82,5 +89,10 @@ func dfsChunked(elementName string, totalCount *int64, maxRecipes int64) interfa
 	cacheMu.Lock()
 	cache[elementName] = res
 	cacheMu.Unlock()
+
 	return res
+}
+
+func GetVisitedNodeCount() int64 {
+	return atomic.LoadInt64(&visitedNodeCount)
 }

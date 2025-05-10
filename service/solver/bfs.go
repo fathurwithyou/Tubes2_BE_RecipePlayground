@@ -7,8 +7,9 @@ import (
 )
 
 var (
-	combosCache map[string][][]string
-	combosMu    sync.RWMutex
+	combosCache      map[string][][]string
+	combosMu         sync.RWMutex
+	visitedNodeCount int64
 )
 
 type node struct {
@@ -37,6 +38,8 @@ func Bfs(rootElementName string, maxRecipes int64) interface{} {
 	currentLevel := []*node{root}
 	workers := runtime.NumCPU()
 	var totalCount int64
+
+	visitedNodeCount = 0
 
 	for len(currentLevel) > 0 && atomic.LoadInt64(&totalCount) < maxRecipes {
 
@@ -70,6 +73,8 @@ func Bfs(rootElementName string, maxRecipes int64) interface{} {
 					if atomic.LoadInt64(&totalCount) >= maxRecipes {
 						break
 					}
+
+					atomic.AddInt64(&visitedNodeCount, 1)
 
 					combosMu.RLock()
 					combos, ok := combosCache[parent.Name]
