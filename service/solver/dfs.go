@@ -1,52 +1,34 @@
 package solver
 
 import (
-	"sync"
 	"sync/atomic"
 )
 
-var (
-	cache   map[string]interface{}
-	cacheMu sync.RWMutex
-)
-
 func Dfs(rootElementName string, maxRecipes int64) interface{} {
+
 	if elementsMapGlobal == nil {
 		return map[string]string{"error": "Element data not initialized"}
 	}
-	cacheMu.Lock()
-	cache = make(map[string]interface{})
-	cacheMu.Unlock()
 
 	var totalCount int64
-	visitedNodeCount = 0
+	atomic.StoreInt64(&visitedNodeCount, 0)
 	return dfsChunked(rootElementName, &totalCount, maxRecipes)
 }
 
 func dfsChunked(elementName string, totalCount *int64, maxRecipes int64) interface{} {
 
-	cacheMu.RLock()
-	if val, ok := cache[elementName]; ok {
-
-		atomic.AddInt64(&visitedNodeCount, 1)
-		cacheMu.RUnlock()
-		return val
-	}
-	cacheMu.RUnlock()
-
 	if atomic.LoadInt64(totalCount) >= maxRecipes {
-		cacheMu.Lock()
-		cache[elementName] = elementName
-		cacheMu.Unlock()
 		atomic.AddInt64(&visitedNodeCount, 1)
 		return elementName
 	}
 
 	eData, exists := elementsMapGlobal[elementName]
+
 	if !exists || len(eData.Recipes) == 0 || eData.Tier == 0 {
-		cacheMu.Lock()
-		cache[elementName] = elementName
-		cacheMu.Unlock()
+
+		if exists && eData.Tier == 0 {
+			atomic.AddInt64(totalCount, 1)
+		}
 		atomic.AddInt64(&visitedNodeCount, 1)
 		return elementName
 	}
@@ -71,26 +53,26 @@ func dfsChunked(elementName string, totalCount *int64, maxRecipes int64) interfa
 	}
 
 	var results [][]interface{}
+
 	for _, rec := range recipes {
+
 		if atomic.LoadInt64(totalCount) >= maxRecipes {
 			break
 		}
-		atomic.AddInt64(totalCount, 1)
+
 		left := dfsChunked(rec[0], totalCount, maxRecipes)
 		right := dfsChunked(rec[1], totalCount, maxRecipes)
 
-		if left == nil || right == nil {
-			continue
+		leftData, leftOk := elementsMapGlobal[rec[0]]
+		rightData, rightOk := elementsMapGlobal[rec[1]]
+		if leftOk && rightOk && leftData.Tier == 0 && rightData.Tier == 0 {
+			atomic.AddInt64(totalCount, 1)
 		}
+
 		results = append(results, []interface{}{left, right})
 	}
 
-	res := map[string]interface{}{elementName: results}
-	cacheMu.Lock()
-	cache[elementName] = res
-	cacheMu.Unlock()
-
-	return res
+	return map[string]interface{}{elementName: results}
 }
 
 func GetVisitedNodeCount() int64 {
