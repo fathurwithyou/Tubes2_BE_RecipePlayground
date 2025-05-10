@@ -16,7 +16,6 @@ func Dfs(rootElementName string, maxRecipes int64) interface{} {
 }
 
 func dfsChunked(elementName string, totalCount *int64, maxRecipes int64) interface{} {
-
 	if atomic.LoadInt64(totalCount) >= maxRecipes {
 		atomic.AddInt64(&visitedNodeCount, 1)
 		return elementName
@@ -25,10 +24,6 @@ func dfsChunked(elementName string, totalCount *int64, maxRecipes int64) interfa
 	eData, exists := elementsMapGlobal[elementName]
 
 	if !exists || len(eData.Recipes) == 0 || eData.Tier == 0 {
-
-		if exists && eData.Tier == 0 {
-			atomic.AddInt64(totalCount, 1)
-		}
 		atomic.AddInt64(&visitedNodeCount, 1)
 		return elementName
 	}
