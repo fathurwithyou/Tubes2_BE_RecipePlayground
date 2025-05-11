@@ -57,6 +57,12 @@ Tubes2_BE_RecipePlayground/
 └── vercel.json
 ```
 
+## Usage
+Run this following command in root directory, ensure the Go version is over 1.2.
+```bash
+go run main.go 
+```
+
 ## Contributors
 
 | Nama | NIM |
