@@ -15,7 +15,10 @@ import (
 var router *gin.Engine
 
 func init() {
-
+	if gin.Mode() != gin.ReleaseMode {
+        gin.SetMode(gin.ReleaseMode)
+    }
+	
 	if err := scraper.Scrape("alchemy_elements.json"); err != nil {
 		log.Fatalf("Failed to scrape elements: %v", err)
 	}
